@@ -2,6 +2,7 @@ package com.alibaba.easyexcel.test.demo.read;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,10 @@ public class DemoDataListener extends AnalysisEventListener<DemoData> {
      */
     private static final int BATCH_COUNT = 5;
     List<DemoData> list = new ArrayList<DemoData>();
+
+    //计数器
+    private AtomicInteger count = new AtomicInteger();
+
     /**
      * 假设这个是一个DAO，当然有业务逻辑这个也可以是一个service。当然如果不用存储这个对象没用。
      */
@@ -51,10 +56,17 @@ public class DemoDataListener extends AnalysisEventListener<DemoData> {
      */
     @Override
     public void invoke(DemoData data, AnalysisContext context) {
+        count.incrementAndGet();
         LOGGER.info("解析到一条数据:{}", JSON.toJSONString(data));
         list.add(data);
         // 达到BATCH_COUNT了，需要去存储一次数据库，防止数据几万条数据在内存，容易OOM
-        if (list.size() >= BATCH_COUNT) {
+//        if (list.size() >= BATCH_COUNT) {
+//            saveData();
+//            // 存储完成清理 list
+//            list.clear();
+//        }
+
+        if (list.size() >= 100) {
             saveData();
             // 存储完成清理 list
             list.clear();
@@ -70,6 +82,7 @@ public class DemoDataListener extends AnalysisEventListener<DemoData> {
     public void doAfterAllAnalysed(AnalysisContext context) {
         // 这里也要保存数据，确保最后遗留的数据也存储到数据库
         saveData();
+        System.out.println("总数量为： " +count);
         LOGGER.info("所有数据解析完成！");
     }
 
